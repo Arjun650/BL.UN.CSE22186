@@ -1,9 +1,8 @@
 import React from "react";
 import { BrowserRouter as Router, Routes, Route, Link } from "react-router-dom";
-import { AppBar, Toolbar, Typography, Button, Container, Box, MenuItem, Select, InputLabel, FormControl, Tooltip } from "@mui/material";
+import axios from "axios";
 import { Line } from "react-chartjs-2";
 import { Chart as ChartJS, LineElement, PointElement, LinearScale, CategoryScale, Tooltip as ChartTooltip, Legend } from 'chart.js';
-import axios from 'axios';
 
 ChartJS.register(LineElement, PointElement, LinearScale, CategoryScale, ChartTooltip, Legend);
 
@@ -14,9 +13,10 @@ function StockPage() {
   const [minutes, setMinutes] = React.useState(50);
   const [data, setData] = React.useState(null);
 
+  // Fetch stock data for the selected ticker and time range
   const fetchData = async () => {
     try {
-      const res = await axios.get(`${API_BASE}/stocks/${ticker}?minutes=${minutes}&aggregation=average`);
+      const res = await axios.get(`${API_BASE}/stocks/${ticker}?minutes=${minutes}`);
       setData(res.data);
     } catch (err) {
       console.error(err);
@@ -25,7 +25,7 @@ function StockPage() {
 
   React.useEffect(() => {
     fetchData();
-  }, [ticker, minutes]);
+  }, [ticker, minutes]); // Fetch data when ticker or minutes change
 
   const chartData = data ? {
     labels: data.priceHistory.map(p => new Date(p.lastUpdatedAt).toLocaleTimeString()),
@@ -47,27 +47,27 @@ function StockPage() {
   } : null;
 
   return (
-    <Container sx={{ mt: 4 }}>
-      <Typography variant="h4" gutterBottom>Stock Chart</Typography>
+    <div>
+      <h1>Stock Chart</h1>
 
-      <Box sx={{ display: 'flex', gap: 2, mb: 3 }}>
-        <FormControl>
-          <InputLabel>Stock</InputLabel>
-          <Select value={ticker} label="Stock" onChange={(e) => setTicker(e.target.value)}>
-            {['NVDA', 'PYPL', 'AAPL', 'MSFT', 'GOOGL'].map(t => <MenuItem key={t} value={t}>{t}</MenuItem>)}
-          </Select>
-        </FormControl>
+      <div>
+        <label>
+          Stock:
+          <select value={ticker} onChange={(e) => setTicker(e.target.value)}>
+            {['NVDA', 'PYPL', 'AAPL', 'MSFT', 'GOOGL'].map(t => <option key={t} value={t}>{t}</option>)}
+          </select>
+        </label>
 
-        <FormControl>
-          <InputLabel>Minutes</InputLabel>
-          <Select value={minutes} label="Minutes" onChange={(e) => setMinutes(Number(e.target.value))}>
-            {[15, 30, 50, 90].map(m => <MenuItem key={m} value={m}>{m} min</MenuItem>)}
-          </Select>
-        </FormControl>
-      </Box>
+        <label>
+          Minutes:
+          <select value={minutes} onChange={(e) => setMinutes(Number(e.target.value))}>
+            {[15, 30, 50, 90].map(m => <option key={m} value={m}>{m} min</option>)}
+          </select>
+        </label>
+      </div>
 
-      {chartData ? <Line data={chartData} /> : <Typography>Loading...</Typography>}
-    </Container>
+      {chartData ? <Line data={chartData} /> : <p>Loading...</p>}
+    </div>
   );
 }
 
@@ -76,6 +76,7 @@ function CorrelationHeatmap() {
   const [correlations, setCorrelations] = React.useState([]);
   const [tickers] = React.useState(["NVDA", "PYPL", "AAPL", "MSFT", "GOOGL"]);
 
+  // Fetch correlation data between stocks for the selected time range
   const fetchData = async () => {
     const results = [];
     for (let i = 0; i < tickers.length; i++) {
@@ -116,35 +117,30 @@ function CorrelationHeatmap() {
   }, [minutes]);
 
   return (
-    <Container sx={{ mt: 4 }}>
-      <Typography variant="h4" gutterBottom>Correlation Heatmap</Typography>
-      <FormControl sx={{ mb: 2 }}>
-        <InputLabel>Minutes</InputLabel>
-        <Select value={minutes} onChange={(e) => setMinutes(Number(e.target.value))}>
-          {[15, 30, 50, 90].map(m => <MenuItem key={m} value={m}>{m} min</MenuItem>)}
-        </Select>
-      </FormControl>
+    <div>
+      <h1>Correlation Heatmap</h1>
+      <label>
+        Minutes:
+        <select value={minutes} onChange={(e) => setMinutes(Number(e.target.value))}>
+          {[15, 30, 50, 90].map(m => <option key={m} value={m}>{m} min</option>)}
+        </select>
+      </label>
 
-      <Box sx={{ display: 'grid', gridTemplateColumns: `repeat(${tickers.length}, 1fr)`, gap: 1 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: `repeat(${tickers.length}, 1fr)` }}>
         {tickers.map((t1, i) => (
           tickers.map((t2, j) => {
-            if (i === j) return <Box key={`${i}-${j}`} sx={{ height: 40 }} />;
+            if (i === j) return <div key={`${i}-${j}`} style={{ height: 40 }} />;
             const match = correlations.find(c => c.from === t1 && c.to === t2);
             const bg = match ? getColor(match.correlation) : '#eee';
             return (
-              <Tooltip
-                key={`${i}-${j}`}
-                title={match ? `${t1}-${t2}: ${match.correlation}\n${t1} Avg: ${match.avg[t1]}, SD: ${match.stddev[t1]}\n${t2} Avg: ${match.avg[t2]}, SD: ${match.stddev[t2]}` : ''}
-              >
-                <Box sx={{ height: 40, backgroundColor: bg, textAlign: 'center', lineHeight: '40px' }}>
-                  {match ? match.correlation : '-'}
-                </Box>
-              </Tooltip>
+              <div key={`${i}-${j}`} style={{ height: 40, backgroundColor: bg, textAlign: 'center', lineHeight: '40px' }}>
+                {match ? match.correlation : '-'}
+              </div>
             );
           })
         ))}
-      </Box>
-    </Container>
+      </div>
+    </div>
   );
 }
 
@@ -160,19 +156,12 @@ function getColor(value) {
 function App() {
   return (
     <Router>
-      <AppBar position="static">
-        <Toolbar>
-          <Typography variant="h6" sx={{ flexGrow: 1 }}>
-            Stock Insight App
-          </Typography>
-          <Button color="inherit" component={Link} to="/">
-            Stock Chart
-          </Button>
-          <Button color="inherit" component={Link} to="/heatmap">
-            Correlation Heatmap
-          </Button>
-        </Toolbar>
-      </AppBar>
+      <div style={{ backgroundColor: '#333', color: '#fff', padding: '10px' }}>
+        <h2>Stock Insight App</h2>
+        <Link to="/" style={{ color: '#fff', marginRight: '10px' }}>Stock Chart</Link>
+        <Link to="/heatmap" style={{ color: '#fff' }}>Correlation Heatmap</Link>
+      </div>
+
       <Routes>
         <Route path="/" element={<StockPage />} />
         <Route path="/heatmap" element={<CorrelationHeatmap />} />
