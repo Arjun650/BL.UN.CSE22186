@@ -1,4 +1,4 @@
-import {getStockPriceHistory, calculateCorrelation} from '../'
+import { getAveragePrice, getStockPriceHistory } from "../services/stockService.js";
 
 const getStockCorrelation = async(req, res) =>{
     const {minutes, ticker: ticker1} = req.query; 

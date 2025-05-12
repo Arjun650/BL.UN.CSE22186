@@ -1,8 +1,9 @@
 import express from "express";
+import getStockAveragePrice from "../controllers/stockController.js";
 const router = express.Router(); 
-const stockController = require('../controllers/stock.controller');
 
 
-router.get('/:ticker', stockController.getStockAveragePrice); 
+
+router.get('/:ticker', getStockAveragePrice);
 
 export default router; 

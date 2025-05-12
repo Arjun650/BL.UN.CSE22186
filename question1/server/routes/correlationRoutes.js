@@ -1,9 +1,8 @@
-import express from 'express'
-import correlationController from '../controllers/correlationController.js';
+import { Router } from 'express';
+import  getStockCorrelation  from '../controllers/correlationController.js';  // Add .js extension
 
+const router = Router();
 
-const router = express.Router(); 
+router.get('/', getStockCorrelation);
 
-router.get('/', correlationController.getStockCorrelation); 
-
-export default router; 
+export default router;
